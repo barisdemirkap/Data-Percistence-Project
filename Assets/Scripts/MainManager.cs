@@ -11,21 +11,34 @@ public class MainManager : MonoBehaviour
     public Rigidbody Ball;
 
     public Text ScoreText;
+
+    // 1. Reference to the HighScore Text UI
+    public Text HighScoreText;
+
     public GameObject GameOverText;
-    
+
     private bool m_Started = false;
     private int m_Points;
-    
+
     private bool m_GameOver = false;
 
-    
-    // Start is called before the first frame update
     void Start()
     {
+        // 2. Show the current best score (from PlayerPrefs via GameManager)
+        if (GameManager.Instance != null)
+        {
+            int bestScore = GameManager.Instance.GetHighScore();
+            string bestPlayer = GameManager.Instance.GetHighScorePlayerName();
+
+            // Display "Best Score: PlayerName : Score"
+            HighScoreText.text = $"Best Score : {bestPlayer} : {bestScore}";
+        }
+
+        // Rest of your existing brick setup
         const float step = 0.6f;
         int perLine = Mathf.FloorToInt(4.0f / step);
-        
-        int[] pointCountArray = new [] {1,1,2,2,5,5};
+
+        int[] pointCountArray = new[] { 1, 1, 2, 2, 5, 5 };
         for (int i = 0; i < LineCount; ++i)
         {
             for (int x = 0; x < perLine; ++x)
@@ -55,8 +68,13 @@ public class MainManager : MonoBehaviour
         }
         else if (m_GameOver)
         {
+            // Restart on space press
             if (Input.GetKeyDown(KeyCode.Space))
             {
+                // (Optional) If you want to save the high score
+                // only once the player hits space:
+                // GameManager.Instance.SaveHighScore(m_Points, GameManager.Instance.PlayerName);
+
                 SceneManager.LoadScene(SceneManager.GetActiveScene().buildIndex);
             }
         }
@@ -72,5 +90,20 @@ public class MainManager : MonoBehaviour
     {
         m_GameOver = true;
         GameOverText.SetActive(true);
+
+        // 3. Check if new score is higher than the saved high score
+        if (GameManager.Instance != null)
+        {
+            int currentHighScore = GameManager.Instance.GetHighScore();
+
+            if (m_Points > currentHighScore)
+            {
+                // 4. Save new high score
+                GameManager.Instance.SaveHighScore(m_Points, GameManager.Instance.PlayerName);
+
+                // 5. Update the UI text immediately (optional)
+                HighScoreText.text = $"Best Score : {GameManager.Instance.PlayerName} : {m_Points}";
+            }
+        }
     }
 }
